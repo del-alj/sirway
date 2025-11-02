@@ -108,10 +108,10 @@ export default function MapView({ className, route }) {
         <>
           <Polyline
             positions={route.stations.map((station) => station.coordinates)}
-            color={route.lineColor || '#27C2A3'}
+            color={route.highlightColor || route.lineColor || '#F5A623'}
             weight={8}
-            opacity={0.85}
-            dashArray="12 8"
+            opacity={0.9}
+            dashArray="14 8"
           />
           {route.stations.map((station, index) => (
             <CircleMarker
@@ -119,8 +119,13 @@ export default function MapView({ className, route }) {
               center={station.coordinates}
               radius={index === 0 || index === route.stations.length - 1 ? 8 : 6}
               pathOptions={{
-                color: route.lineColor || '#27C2A3',
-                fillColor: index === 0 ? '#0C1E4B' : index === route.stations.length - 1 ? '#27C2A3' : '#ffffff',
+                color: route.highlightColor || route.lineColor || '#F5A623',
+                fillColor:
+                  index === 0
+                    ? '#0C1E4B'
+                    : index === route.stations.length - 1
+                    ? (route.highlightColor || '#F5A623')
+                    : '#ffffff',
                 fillOpacity: 0.95,
                 weight: 2,
               }}

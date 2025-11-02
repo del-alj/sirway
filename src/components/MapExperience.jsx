@@ -335,15 +335,18 @@ const RouteBadge = styled.span`
   align-items: center;
   gap: 0.35rem;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: #2f1d00;
+  background: linear-gradient(135deg, #fdd26e, #f5a623);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
 
   &::before {
     content: '';
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: ${({ color }) => color};
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    background: #f07818;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
   }
 `;
 
@@ -352,7 +355,7 @@ const RouteSteps = styled.ol`
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 0.6rem;
+  gap: 0.65rem;
 `;
 
 const RouteStep = styled.li`
@@ -360,9 +363,15 @@ const RouteStep = styled.li`
   align-items: center;
   gap: 0.6rem;
   font-size: 0.9rem;
+  background: rgba(253, 210, 110, 0.14);
+  border: 1px solid rgba(245, 166, 35, 0.25);
+  border-radius: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  color: #fdf6e8;
 
   span {
-    font-weight: 600;
+    font-weight: 700;
+    color: #f5a623;
   }
 `;
 
@@ -643,10 +652,12 @@ const MapExperience = () => {
 
       const line = lines.find((candidate) => candidate.id === lineId);
       const lineColor = line?.color || 'var(--color-accent)';
+      const highlightColor = '#F5A623';
 
       setActiveRoute({
         lineId,
         lineColor,
+        highlightColor,
         stations: routeStations,
       });
 
@@ -870,7 +881,7 @@ const MapExperience = () => {
                     <RouteSummary>
                       <RouteHeader>
                         <span>Stops along the way</span>
-                        <RouteBadge color={activeRoute.lineColor}>
+                        <RouteBadge>
                           Line {activeRoute.lineId}
                         </RouteBadge>
                       </RouteHeader>
