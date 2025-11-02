@@ -187,6 +187,22 @@ const List = styled.ul`
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
+  max-height: clamp(12rem, 28vh, 16rem);
+  overflow-y: auto;
+  padding-right: 0.35rem;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 `;
 
 const ListItem = styled.li`
