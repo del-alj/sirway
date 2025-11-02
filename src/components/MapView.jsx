@@ -1,5 +1,6 @@
 import { useContext, useState, useEffect } from 'react';
-import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, useMap, Polyline, CircleMarker } from 'react-leaflet';
+import L from 'leaflet';
 import { TramNetworkContext } from '../context/TramNetworkContext';
 import { useCity } from '../context/CityContext';
 import StationMarkers from './StationMarkers';
@@ -44,7 +45,20 @@ function CityUpdater() {
   return null;
 }
 
-export default function MapView({ className }) {
+function RouteHighlighter({ route }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!route?.stations?.length) return;
+
+    const bounds = L.latLngBounds(route.stations.map((station) => station.coordinates));
+    map.fitBounds(bounds.pad(0.2), { animate: true, duration: 1.1 });
+  }, [route, map]);
+
+  return null;
+}
+
+export default function MapView({ className, route }) {
   const { currentCity } = useCity();
   const { lines = [], stations = [], loading } = useContext(TramNetworkContext);
   const [zoom, setZoom] = useState(13);
@@ -85,10 +99,35 @@ export default function MapView({ className }) {
         attribution="&copy; OpenStreetMap contributors"
       />
       <CityUpdater />
+      <RouteHighlighter route={route} />
       <TramLines lines={lines} />
       <LocationMarker />
       <StationMarkers stations={stations} zoom={zoom} />
       <LineLabels lines={lines} zoom={zoom} />
+      {route?.stations?.length > 1 && (
+        <>
+          <Polyline
+            positions={route.stations.map((station) => station.coordinates)}
+            color={route.lineColor || '#27C2A3'}
+            weight={8}
+            opacity={0.85}
+            dashArray="12 8"
+          />
+          {route.stations.map((station, index) => (
+            <CircleMarker
+              key={`route-marker-${station.id}`}
+              center={station.coordinates}
+              radius={index === 0 || index === route.stations.length - 1 ? 8 : 6}
+              pathOptions={{
+                color: route.lineColor || '#27C2A3',
+                fillColor: index === 0 ? '#0C1E4B' : index === route.stations.length - 1 ? '#27C2A3' : '#ffffff',
+                fillOpacity: 0.95,
+                weight: 2,
+              }}
+            />
+          ))}
+        </>
+      )}
       <style>{`
         @keyframes pulse {
           0% { transform: scale(0.9); opacity: 1; }

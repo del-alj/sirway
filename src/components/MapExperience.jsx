@@ -297,6 +297,59 @@ const SuggestionMeta = styled.span`
   color: rgba(255, 255, 255, 0.6);
 `;
 
+const RouteSummary = styled.div`
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+`;
+
+const RouteHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-weight: 600;
+`;
+
+const RouteBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.9);
+
+  &::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: ${({ color }) => color};
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+  }
+`;
+
+const RouteSteps = styled.ol`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.6rem;
+`;
+
+const RouteStep = styled.li`
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+
+  span {
+    font-weight: 600;
+  }
+`;
+
 const SubmitButton = styled.button`
   border: none;
   border-radius: 0.85rem;
@@ -413,10 +466,16 @@ const MapExperience = () => {
   const [startStation, setStartStation] = useState(null);
   const [endStation, setEndStation] = useState(null);
   const [plannerFeedback, setPlannerFeedback] = useState('');
+  const [activeRoute, setActiveRoute] = useState(null);
+
+  useEffect(() => {
+    setActiveRoute(null);
+  }, [currentCity]);
 
   useEffect(() => {
     if (!lines.length) {
       setSelectedLineId(null);
+      setActiveRoute(null);
       return;
     }
 
@@ -426,20 +485,31 @@ const MapExperience = () => {
     });
   }, [lines, currentCity]);
 
-  const stationsByLine = useMemo(() => {
+  const lineStationsMap = useMemo(() => {
     const map = new Map();
 
     lines.forEach((line) => {
-      map.set(line.id, []);
-    });
+      const coords = line.coordinates || [];
+      const subset = stations
+        .filter((station) => station.lines?.some((info) => info.id === line.id))
+        .map((station) => {
+          const [lat, lng] = station.coordinates;
+          let nearestIndex = 0;
+          let minDistance = Number.POSITIVE_INFINITY;
 
-    stations.forEach((station) => {
-      station.lines?.forEach((lineInfo) => {
-        if (!map.has(lineInfo.id)) {
-          map.set(lineInfo.id, []);
-        }
-        map.get(lineInfo.id).push(station);
-      });
+          coords.forEach((coord, index) => {
+            const distance = haversineDistance(lat, lng, coord[0], coord[1]);
+            if (distance < minDistance) {
+              minDistance = distance;
+              nearestIndex = index;
+            }
+          });
+
+          return { ...station, lineIndex: nearestIndex };
+        })
+        .sort((a, b) => a.lineIndex - b.lineIndex);
+
+      map.set(line.id, subset);
     });
 
     return map;
@@ -449,16 +519,16 @@ const MapExperience = () => {
     () =>
       lines.map((line) => ({
         line,
-        stationCount: (stationsByLine.get(line.id) || []).length,
+        stationCount: (lineStationsMap.get(line.id) || []).length,
       })),
-    [lines, stationsByLine]
+    [lines, lineStationsMap]
   );
 
   const selectedLineStations = useMemo(() => {
     if (!selectedLineId) return [];
-    const base = stationsByLine.get(selectedLineId) || [];
+    const base = lineStationsMap.get(selectedLineId) || [];
     return sortStations(enrichStations(base, userPosition)).slice(0, 12);
-  }, [selectedLineId, stationsByLine, userPosition]);
+  }, [selectedLineId, lineStationsMap, userPosition]);
 
   const nearestStations = useMemo(() => {
     if (!stations.length) return [];
@@ -490,11 +560,13 @@ const MapExperience = () => {
   const handleSelectCity = (city) => {
     setCurrentCity(city);
     setPlannerFeedback('');
+    setActiveRoute(null);
   };
 
   const handleSelectLine = (lineId) => {
     setSelectedLineId(lineId);
     setPlannerFeedback('');
+    setActiveRoute(null);
   };
 
   const handleSelectStart = (station) => {
@@ -502,6 +574,7 @@ const MapExperience = () => {
     setStartQuery(station.name);
     setStartFocused(false);
     setPlannerFeedback('');
+    setActiveRoute(null);
   };
 
   const handleSelectEnd = (station) => {
@@ -509,20 +582,69 @@ const MapExperience = () => {
     setEndQuery(station.name);
     setEndFocused(false);
     setPlannerFeedback('');
+    setActiveRoute(null);
   };
 
   const handlePreviewRoute = () => {
     if (!startStation || !endStation) {
       setPlannerFeedback('Choose both a start and destination station to preview your journey.');
+      setActiveRoute(null);
       return;
     }
 
     if (startStation.id === endStation.id) {
       setPlannerFeedback('Pick different start and destination stations.');
+      setActiveRoute(null);
       return;
     }
 
-    setPlannerFeedback('Smart routing preview is on the roadmap — you are all set once it ships.');
+    const startLines = startStation.lines?.map((l) => l.id) || [];
+    const endLines = endStation.lines?.map((l) => l.id) || [];
+    const commonLines = startLines.filter((id) => endLines.includes(id));
+
+    if (!commonLines.length) {
+      setPlannerFeedback('Multi-line routing is coming soon. For now choose stations on the same line.');
+      setActiveRoute(null);
+      return;
+    }
+
+    let routeComputed = false;
+
+    for (const lineId of commonLines) {
+      const ordered = lineStationsMap.get(lineId);
+      if (!ordered?.length) continue;
+
+      const startIndex = ordered.findIndex((station) => station.id === startStation.id);
+      const endIndex = ordered.findIndex((station) => station.id === endStation.id);
+
+      if (startIndex === -1 || endIndex === -1) {
+        continue;
+      }
+
+      const [fromIndex, toIndex] = startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+      const slice = ordered.slice(fromIndex, toIndex + 1);
+      const routeStations = startIndex <= endIndex ? slice : [...slice].reverse();
+
+      const line = lines.find((candidate) => candidate.id === lineId);
+      const lineColor = line?.color || 'var(--color-accent)';
+
+      setActiveRoute({
+        lineId,
+        lineColor,
+        stations: routeStations,
+      });
+
+      setSelectedLineId(lineId);
+      setActiveTab('planner');
+      setPlannerFeedback(`Route via line ${line?.name || lineId} — ${routeStations.length} stops.`);
+      routeComputed = true;
+      break;
+    }
+
+    if (!routeComputed) {
+      setPlannerFeedback('Unable to map that route yet — try another station combination.');
+      setActiveRoute(null);
+    }
   };
 
   return (
@@ -727,6 +849,25 @@ const MapExperience = () => {
                       Route timing and transfers are coming soon — today you can stage your trip selections here.
                     </PlannerFeedback>
                   )}
+
+                  {activeRoute?.stations?.length > 1 && (
+                    <RouteSummary>
+                      <RouteHeader>
+                        <span>Stops along the way</span>
+                        <RouteBadge color={activeRoute.lineColor}>
+                          Line {activeRoute.lineId}
+                        </RouteBadge>
+                      </RouteHeader>
+                      <RouteSteps>
+                        {activeRoute.stations.map((station, index) => (
+                          <RouteStep key={`route-step-${station.id}`}>
+                            <span>{index + 1}.</span>
+                            {station.name}
+                          </RouteStep>
+                        ))}
+                      </RouteSteps>
+                    </RouteSummary>
+                  )}
                 </PlannerCard>
               )}
             </TabPanel>
@@ -735,7 +876,7 @@ const MapExperience = () => {
 
         <MapShell>
           <MapViewport>
-            <MapView />
+            <MapView route={activeRoute} />
           </MapViewport>
           <Fab type="button" aria-label="Locate me">⌖</Fab>
         </MapShell>
