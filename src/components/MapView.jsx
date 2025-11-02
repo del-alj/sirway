@@ -12,11 +12,15 @@ import 'leaflet/dist/leaflet.css';
 const CITY_CONFIG = {
   Casablanca: {
     center: [33.5731, -7.5893],
-    bounds: [[33.50, -7.70], [33.65, -7.50]]
+    bounds: [[33.5, -7.7], [33.65, -7.5]]
   },
   Rabat: {
     center: [34.0209, -6.8416],
-    bounds: [[34.00, -6.85], [34.05, -6.75]]
+    bounds: [[34.0, -6.85], [34.05, -6.75]]
+  },
+  'Salé': {
+    center: [34.0378, -6.7985],
+    bounds: [[33.99, -6.88], [34.08, -6.72]]
   }
 };
 
@@ -29,7 +33,10 @@ function CityUpdater() {
   useEffect(() => {
     const config = CITY_CONFIG[currentCity];
     if (config) {
-      map.flyTo(config.center, 14);
+      map.flyTo(config.center, 14, {
+        duration: 1.4,
+        easeLinearity: 0.25
+      });
       map.setMaxBounds(config.bounds);
     }
   }, [currentCity, map]);
@@ -37,7 +44,7 @@ function CityUpdater() {
   return null;
 }
 
-export default function MapView() {
+export default function MapView({ className }) {
   const { currentCity } = useCity();
   const { lines, stations, loading } = useContext(TramNetworkContext);
   const [zoom, setZoom] = useState(13);
@@ -45,26 +52,26 @@ export default function MapView() {
   // Get current city configuration or fallback to Casa
   const cityConfig = CITY_CONFIG[currentCity] || CITY_CONFIG.Casablanca;
 
-  if (loading) return <div>Loading...</div>;
-  if (!lines.length) return <div>No tram lines found</div>;
+  if (loading) return <div className={className}>Loading map…</div>;
+  if (!lines.length) return <div className={className}>No tram lines found</div>;
 
   return (
-    <MapContainer 
+    <MapContainer
+      className={className}
       center={cityConfig.center}
       zoom={15}
-      style={{ height: '100vh', width: '100%' }}
       minZoom={13}
-      maxZoom={15}
+      maxZoom={16}
       maxBounds={cityConfig.bounds}
       maxBoundsViscosity={1.0}
+      style={{ height: '100%', width: '100%' }}
+      whenCreated={(mapInstance) => mapInstance.on('zoomend', () => setZoom(mapInstance.getZoom()))}
     >
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png" 
-        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
+        attribution="&copy; OpenStreetMap contributors"
       />
       {/* City-specific updates */}
-      {/* Map components */}
-      {/* <ZoomHandler onZoom={setZoom} /> */}
       <CityUpdater />
       <TramLines lines={lines} />
       <LocationMarker />

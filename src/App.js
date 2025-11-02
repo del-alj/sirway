@@ -1,36 +1,42 @@
-// Fix 1: Ensure you only have ONE App declaration
 import React from 'react';
-// import MapView from './components/MapView';
-// import RoutePanel from './components/RoutePanel';
-
-// // Should be only ONE default export
-// export default function App() { // <-- Remove any duplicate declarations
-//   return (
-//     <div className="h-screen flex">
-//       <MapView />
-//       <RoutePanel />
-//     </div>
-//   );
-// }
-
-// App.jsx
+import styled from 'styled-components';
+import GlobalStyle from './styles/GlobalStyle';
 import { CityProvider } from './context/CityContext';
 import { TramNetworkProvider } from './context/TramNetworkContext';
-import MapView from './components/MapView';
-import ComingSoon from './components/ComingSoon';
-import Header from './components/Header'; // Import the new component
+import Header from './components/Header';
+import HeroSection from './components/HeroSection';
+import AboutSection from './components/AboutSection';
+import MapExperience from './components/MapExperience';
+import HowItWorks from './components/HowItWorks';
+import FeatureHighlights from './components/FeatureHighlights';
+import Footer from './components/Footer';
+
+const AppShell = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-background);
+`;
+
 function App() {
   return (
     <CityProvider>
-    <TramNetworkProvider>
-    <div className="flex flex-col h-screen">
-        <Header /> {/* Use the header component */}
-        <main className="flex-1 relative">
-          <MapView />
-          {/* <ComingSoon/> */}
-        </main>
-      </div>
-    </TramNetworkProvider>
+      <TramNetworkProvider>
+        <>
+          <GlobalStyle />
+          <AppShell>
+            <Header />
+            <main>
+              <HeroSection />
+              <AboutSection />
+              <MapExperience />
+              <HowItWorks />
+              <FeatureHighlights />
+            </main>
+            <Footer />
+          </AppShell>
+        </>
+      </TramNetworkProvider>
     </CityProvider>
   );
 }
