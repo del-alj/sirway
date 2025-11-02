@@ -133,6 +133,7 @@ const TabPanel = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
+  padding: 0.6rem 0rem;
 `;
 
 const LineSelector = styled.div`
