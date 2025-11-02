@@ -39,6 +39,7 @@ function getNearestCity(lat, lng) {
 
 export function CityProvider({ children }) {
   const [currentCity, setCurrentCity] = useState('Casablanca');
+  const [userPosition, setUserPosition] = useState(null);
   const hasDetectedRef = useRef(false);
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export function CityProvider({ children }) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+        setUserPosition({ lat: latitude, lng: longitude });
         const nearestCity = getNearestCity(latitude, longitude);
         setCurrentCity(nearestCity);
         hasDetectedRef.current = true;
@@ -65,7 +67,7 @@ export function CityProvider({ children }) {
   }, []);
 
   return (
-    <CityContext.Provider value={{ currentCity, setCurrentCity }}>
+    <CityContext.Provider value={{ currentCity, setCurrentCity, userPosition, setUserPosition }}>
       {children}
     </CityContext.Provider>
   );
