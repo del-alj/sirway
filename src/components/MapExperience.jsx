@@ -240,7 +240,7 @@ const MapViewport = styled.div`
   border-radius: clamp(1.5rem, 3vw, 2rem);
   overflow: hidden;
   box-shadow: 0 45px 85px rgba(0, 0, 0, 0.35);
-  min-height: clamp(480px, 60vw, 640px);
+  height: clamp(480px, 60vw, 640px);
 
   .leaflet-container {
     height: 100%;

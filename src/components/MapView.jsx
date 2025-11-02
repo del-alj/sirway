@@ -46,43 +46,53 @@ function CityUpdater() {
 
 export default function MapView({ className }) {
   const { currentCity } = useCity();
-  const { lines, stations, loading } = useContext(TramNetworkContext);
+  const { lines = [], stations = [], loading } = useContext(TramNetworkContext);
   const [zoom, setZoom] = useState(13);
 
-  // Get current city configuration or fallback to Casa
   const cityConfig = CITY_CONFIG[currentCity] || CITY_CONFIG.Casablanca;
 
-  if (loading) return <div className={className}>Loading map…</div>;
-  if (!lines.length) return <div className={className}>No tram lines found</div>;
+  if (loading) {
+    return <div className={className}>Loading map…</div>;
+  }
+
+  if (!lines.length) {
+    return <div className={className}>No tram lines found</div>;
+  }
 
   return (
     <MapContainer
       className={className}
       center={cityConfig.center}
-      zoom={15}
-      minZoom={13}
+      zoom={14}
+      preferCanvas
+      zoomAnimation
+      zoomAnimationThreshold={4}
+      markerZoomAnimation
+      wheelDebounceTime={60}
+      wheelPxPerZoomLevel={100}
+      minZoom={12}
       maxZoom={16}
       maxBounds={cityConfig.bounds}
       maxBoundsViscosity={1.0}
+      scrollWheelZoom
       style={{ height: '100%', width: '100%' }}
-      whenCreated={(mapInstance) => mapInstance.on('zoomend', () => setZoom(mapInstance.getZoom()))}
+      whenCreated={(mapInstance) => {
+        mapInstance.on('zoomend', () => setZoom(mapInstance.getZoom()));
+      }}
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
         attribution="&copy; OpenStreetMap contributors"
       />
-      {/* City-specific updates */}
       <CityUpdater />
       <TramLines lines={lines} />
       <LocationMarker />
       <StationMarkers stations={stations} zoom={zoom} />
       <LineLabels lines={lines} zoom={zoom} />
-
-      {/* Add CSS animation */}
       <style>{`
         @keyframes pulse {
           0% { transform: scale(0.9); opacity: 1; }
-          70% { transform: scale(1.3); opacity: 0.5; }
+          70% { transform: scale(1.2); opacity: 0.5; }
           100% { transform: scale(0.9); opacity: 1; }
         }
         .gps-marker div {

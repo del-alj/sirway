@@ -1,21 +1,17 @@
 // components/LineLabels.jsx
+import { Fragment } from 'react';
 import { Marker } from 'react-leaflet';
 import L from 'leaflet';
 
 const createLineLabel = (lineName, lineColor, zoom) => {
-  const baseSize = 40;  // Base size at zoom 13
-  let size = baseSize + (zoom - 13) * 3;  // Grow 3px per zoom level
-  let fontSize = 11 + (zoom - 13) * 0.5;  // Grow font 0.5px per zoom level
-  if (zoom < 13 ) {
-    fontSize = 11 + (13 - 13) * 0.5; 
-    size = baseSize + (13 - 13) * 3;
-  }
-  // Dynamic sizing based on zoom level
-  
+  const baseSize = 36;
+  const size = Math.max(baseSize, baseSize + (zoom - 13) * 3);
+  const fontSize = Math.max(11, 11 + (zoom - 13) * 0.5);
+
   return L.divIcon({
     className: 'line-label',
     iconSize: [size, size],
-    iconAnchor: [size/2, size],  // Center bottom anchor
+    iconAnchor: [size / 2, size / 2],
     html: `
       <div style="
         background: ${lineColor};
@@ -26,15 +22,12 @@ const createLineLabel = (lineName, lineColor, zoom) => {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 600;
+        font-weight: 700;
         font-size: ${fontSize}px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        // border: 2px solid #ffffff;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        font-family: 'Arial', sans-serif;
-        // transform: translateY(-${size + 10}px);
-        transform: translateY(-18px); // Move label upward
-
+        letter-spacing: 0.02em;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        transform: translateY(-12px);
+        border: 2px solid rgba(255,255,255,0.85);
       ">
         ${lineName}
       </div>
@@ -42,42 +35,29 @@ const createLineLabel = (lineName, lineColor, zoom) => {
   });
 };
 
-export default function LineLabels({ lines, zoom }) {
+export default function LineLabels({ lines = [], zoom }) {
+  if (!lines.length || zoom < 12) {
+    return null;
+  }
 
-  const baseSize = 40;  // Base size at zoom 13
-  const size = baseSize + (zoom - 13) * 3;  // Grow 3px per zoom level
-  const fontSize = 11 + (zoom - 13) * 0.5;  // Grow font 0.5px per zoom level
-  console.log('size in zoom', zoom, 'is: ',size);
-  return lines.map(line => {
-    if (!line.coordinates?.length) return null;
-    
-    const startPoint = line.coordinates[0];
-    const endPoint = line.coordinates[line.coordinates.length - 1];
-    const cleanName = line.name.split(':')[0].trim();
+  return lines.map((line) => {
+    if (!line?.coordinates?.length) return null;
+
+    const midpointIndex = Math.floor(line.coordinates.length / 2);
+    const midpoint = line.coordinates[midpointIndex];
+    const cleanName = (line.name || line.id || '').split(':')[0].trim();
+
+    if (!midpoint) return null;
 
     return (
-      <>
+      <Fragment key={`line-label-${line.id}`}>
         <Marker
-          key={`${line.id}-start`}
-          position={startPoint}
+          position={midpoint}
           icon={createLineLabel(cleanName, line.color, zoom)}
           zIndexOffset={1000}
-          offset={[0, -size - 15]}  // Dynamic offset
           interactive={false}
         />
-        <Marker
-         key={`${line.id}-end`}
-          position={endPoint}
-          icon={createLineLabel(cleanName, line.color, zoom)}
-          // icon={createLineLabel(cleanName, line.color)}
-
-          zIndexOffset={1000}
-          offset={[0, -size - 15]}  // Dynamic offset
-          // offset={[0, -22]} // Increased upward offset
-
-          interactive={false}
-        />
-      </>
+      </Fragment>
     );
   });
 }
