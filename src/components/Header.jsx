@@ -1,6 +1,7 @@
 // components/Header.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
+import { useCity } from '../context/CityContext';
 
 const HeaderBar = styled.header`
   position: sticky;
@@ -91,6 +92,10 @@ const Selector = styled.select`
 `;
 
 const Header = () => {
+  const { currentCity, setCurrentCity } = useCity();
+  const [language, setLanguage] = useState('EN');
+  const cityOptions = ['Casablanca', 'Rabat', 'Salé'];
+
   return (
     <HeaderBar>
       <BrandBlock>
@@ -107,15 +112,25 @@ const Header = () => {
       </Nav>
 
       <Controls>
-        <Selector aria-label="Select city" defaultValue="casablanca">
-          <option value="casablanca">Casablanca</option>
-          <option value="rabat">Rabat</option>
-          <option value="sale">Salé</option>
+        <Selector
+          aria-label="Select city"
+          value={currentCity}
+          onChange={(event) => setCurrentCity(event.target.value)}
+        >
+          {cityOptions.map((city) => (
+            <option key={city} value={city}>
+              {city}
+            </option>
+          ))}
         </Selector>
-        <Selector aria-label="Select language" defaultValue="en">
-          <option value="en">EN</option>
-          <option value="fr">FR</option>
-          <option value="ar">AR</option>
+        <Selector
+          aria-label="Select language"
+          value={language}
+          onChange={(event) => setLanguage(event.target.value)}
+        >
+          <option value="EN">EN</option>
+          <option value="FR">FR</option>
+          <option value="AR">AR</option>
         </Selector>
       </Controls>
     </HeaderBar>
