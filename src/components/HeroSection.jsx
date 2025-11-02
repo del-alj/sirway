@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import HeroMapPreview from './HeroMapPreview';
 
 const Wrapper = styled.section`
   position: relative;
@@ -121,8 +122,7 @@ const Illustration = styled.div`
   position: relative;
   height: 100%;
   border-radius: clamp(1.5rem, 4vw, 2rem);
-  background: linear-gradient(145deg, rgba(12, 30, 75, 0.95), rgba(12, 30, 75, 0.35)),
-              url('https://images.unsplash.com/photo-1549923746-1235c53d61f6?auto=format&fit=crop&w=1400&q=80') center/cover;
+  background: linear-gradient(145deg, rgba(12, 30, 75, 0.85), rgba(12, 30, 75, 0.45));
   box-shadow: 0 45px 85px rgba(12, 30, 75, 0.25);
   overflow: hidden;
   display: flex;
@@ -135,8 +135,17 @@ const Illustration = styled.div`
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: linear-gradient(120deg, rgba(39, 194, 163, 0.15), transparent 55%);
+    background: linear-gradient(120deg, rgba(39, 194, 163, 0.22), transparent 55%);
+    pointer-events: none;
   }
+`;
+
+const MapPreviewWrapper = styled.div`
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  filter: saturate(1.1) brightness(0.92);
 `;
 
 const MetricBadge = styled.div`
@@ -178,6 +187,9 @@ const HeroSection = () => {
 
       <VisualBlock>
         <Illustration>
+          <MapPreviewWrapper>
+            <HeroMapPreview />
+          </MapPreviewWrapper>
           <MetricBadge>
             <Dot />
             Live coverage across 38km of tram lines
